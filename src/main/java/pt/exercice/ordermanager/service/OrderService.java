@@ -34,7 +34,9 @@ public class OrderService {
 	public ResponseEntity<String> createOrder(Order order) {
 		orderRepository.save(order);
 
-		List<Stock> unassociatedStockMovements = stockRepository.findByOrderIdIsNull();
+		LOGGER.info("Checking for Stock Movements that are available for that order.");
+		
+		List<Stock> unassociatedStockMovements = stockRepository.findByOrderIdIsNullAndItem_Id(order.getItem().getId());
 		if (!unassociatedStockMovements.isEmpty()) {
 			updateStockMovements(order, unassociatedStockMovements);
 

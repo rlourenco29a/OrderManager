@@ -4,6 +4,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.http.HttpStatus;
@@ -39,13 +41,17 @@ public class OrderController {
 	@Autowired
 	public OrderService orderService;
 	
+	private static final Logger LOGGER = LogManager.getLogger(OrderController.class);
+	
 	@GetMapping
     public Iterable<Order> getAllOrders() {
+		LOGGER.info("Finding all orders!");
         return orderRepository.findAll();
     }
 
     @GetMapping("/get/{id}")
     public Order getOrderById(@PathVariable Long id) throws NotFoundException {
+    	LOGGER.info("Finding order {}!", id);
         return orderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException());
     }
@@ -60,14 +66,16 @@ public class OrderController {
         if(itemAux.isPresent()) {
         	order.setItem(itemAux.get());
         } else {
+        	LOGGER.error("Failed to create a new order - reason Item {} not found.", order.getItem().getId());
         	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Item not found.");
         }
         if(userAux.isPresent()) {
         	order.setUser(userAux.get());
         } else {
+        	LOGGER.error("Failed to create a new order - reason User {} not found.", order.getUser().getId());
         	return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
         }
-        
+        LOGGER.info("Created a new Order!");
         return orderService.createOrder(order);
     }
 
@@ -81,6 +89,7 @@ public class OrderController {
                 	order.setQuantity(updatedOrder.getQuantity());
                 	if (updatedOrder.getUser() != null)
                 	order.setUser(updatedOrder.getUser());
+                    LOGGER.info("Updated order {}!", id);
                     return orderRepository.save(order);
                 })
                 .orElseThrow(() -> new NotFoundException());
@@ -88,6 +97,7 @@ public class OrderController {
 
     @DeleteMapping("/delete/{id}")
     public void deleteOrder(@PathVariable Long id) {
+        LOGGER.info("Deleting order {}!", id);
     	orderRepository.deleteById(id);
     }
 
